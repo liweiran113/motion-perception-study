@@ -1,12 +1,11 @@
 # 后端接入指南（Supabase）
 
-本目录的代码已经具备两种模式，由 `config.js` 一个字段切换：
+> **v1.1.0（2026-11-08）更新**：前端已按《§21 首页与视觉语言规范》《§22 试次页规范》重写，
+> 数据库新增 §22.11 的播放行为字段与五档 `experience_level`。
+> **已在运行的库必须重新执行一次 `supabase/schema.sql`**（整段粘贴重跑即可，幂等、不清数据），
+> 否则新前端提交评分会报"列不存在"。详见文末"升级步骤"。
 
-| 模式 | config.js 里 | 数据去向 | 用途 |
-|---|---|---|---|
-| 本地预览 | `backend: "preview"` | 参与者自己的浏览器 | 给导师/组内演示 |
-| 正式采集 | `backend: "supabase"` | **Supabase 数据库** | 收被试数据 |
-
+本目录的代码为正式采集模式（`config.js` 里 `backend: "supabase"`）。
 后端能力（服务端冻结分配、A/B 交换、注意力判定、防重复提交、管理员导出）
 全部在 `supabase/schema.sql` 里，以 4 个数据库函数实现，前端只拿匿名数据。
 
@@ -62,20 +61,55 @@
   `trial_assignments`（15 行）、`ratings`（15 行）
 - 刷新页面点"继续上次作答"：题目、左右顺序**完全不变**
 
-## 五、导出数据（统计用）
+## 五、查看与导出数据（统计用）
 
-用任意 HTTP 工具或浏览器控制台调用（在 Supabase 项目页面按 F12 也行）：
+### 方式 A：本机导出页（推荐，双击就能用）
 
-```js
-fetch('https://xxxx.supabase.co/rest/v1/rpc/admin_export', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json', apikey: 'anonKey', Authorization: 'Bearer anonKey' },
-  body: JSON.stringify({ p_token: '你设置的管理员令牌' })
-}).then(r => r.json()).then(d => console.log(d))
+打开 `tools/export.html`（**只在本机打开，不要部署**）：
+
+1. 填 Project URL、publishable key、admin_token（可勾选"记住"）
+2. 点「拉取数据」→ 页面直接显示：参与人数 / 有效人数 / 各单元样本均衡情况 / 参与者状态表 / 评分明细
+3. 点「下载 participants.csv」「下载 ratings.csv」拿去 SPSS / R / Excel
+
+`ratings.csv` 每行一次评分，含比较单元、路径、左右方法代码、四个分数、用时。
+分析时先按 `valid_participant = true` 筛，练习题（`trial_type=practice`）不计入统计。
+
+### 方式 B：命令行脚本（同样功能，可定时批量跑）
+
+```
+node tools/export_csv.mjs --url https://xxxx.supabase.co --key sb_publishable_xxx --token 你的admin_token --out ./export
 ```
 
-返回的 JSON 覆盖需求文档 §14 的全部列（含每题的左右方法代码），
-可直接转 CSV 分析。**令牌打错会返回错误，不会泄露数据。**
+产出 `participants.csv`、`ratings.csv`、`raw.json`（原始备份），并打印样本均衡检查。
+
+### 方式 C：Supabase 后台直接看
+
+**Table Editor** → 三张表：
+
+| 表 | 内容 |
+|---|---|
+| `participants` | 每人一行：序号、是否定稿、注意力失败数、有效性 |
+| `trial_assignments` | 每人 15 行：题目分配（含左右媒体） |
+| `ratings` | 每次评分：四个分数 + 用时 |
+
+想在 SQL Editor 里直接看"人 × 题"的合并视图：
+
+```sql
+select p.participant_serial as 序号, p.valid_participant as 有效,
+       t.trial_order as 题序, t.trial_type as 类型, t.comparison_id as 单元,
+       t.method_left as 左方法, t.method_right as 右方法,
+       r.path_score as 路径, r.motion_score as 动作,
+       r.speech_score as 语音, r.overall_score as 整体,
+       r.response_time_ms as 用时ms
+from participants p
+join trial_assignments t using (participant_id)
+left join ratings r on r.participant_id = p.participant_id and r.trial_id = t.trial_id
+where t.trial_type = 'formal'
+order by p.participant_serial, t.trial_order;
+```
+
+> **注意**：`admin_export` 返回 `method_left / method_right`（真实方法代码），
+> 导出的 CSV 属于内部数据，不要公开发布。令牌打错只会报错，不会泄露数据。
 
 ## 六、正式数据来了之后
 
@@ -97,3 +131,22 @@ fetch('https://xxxx.supabase.co/rest/v1/rpc/admin_export', {
 | 提示"该参与者已提交" | 正常：每人只能交一次，测试用无痕窗口开新会话 |
 | 答完最后一题没反应 | 看浏览器控制台报错；多半是 submit_scores 的校验被拦，错误信息会写明原因 |
 | Supabase 免费项目暂停 | 7 天不活跃会休眠，去项目页点 Restore 即可，数据不丢 |
+
+---
+
+## 升级步骤（从 pilot-1.0.0 升到 pilot-1.1.0）
+
+1. Supabase → SQL Editor → 整段重跑 `supabase/schema.sql`（幂等，不会清数据）。
+   变化：
+   - `participants` 新增 `experience_level`（五档）、`device_checked`；`expertise` 放宽为兼容列
+   - `ratings` 新增 §22.11 的 13 个播放行为字段
+   - `start_session` / `submit_scores` / `admin_export` 同步更新
+   - 文件末尾的"增量迁移"段负责给已有库补列，新库上为 no-op
+2. 上传新的前端文件到 GitHub 仓库根目录（覆盖，不要先删后传）：
+   `index.html`、`style.css`、`app.js`、`config.js`、`README-BACKEND.md`。
+   `api.js` 无改动；`media/`、`supabase/`、`tools/` 不变。
+3. 用 Ctrl+F5 或隐身窗口验证线上版本。
+
+**注意**：若以后修改任何函数的参数列表，必须先
+`drop function if exists 函数名(旧参数类型);` 再 `create or replace`，
+否则 Postgres 会新增一个重载而不是替换，导致调用混乱。
