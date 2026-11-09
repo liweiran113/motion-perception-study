@@ -244,7 +244,12 @@ dialog .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
 /* ==========================================================
    末端对齐层 —— 与研究方《GitHub 前端接入包 (2)》最终渲染一致
    （只覆盖与包不一致的细节；放最后以获得最高优先级）
+   —— 应用户要求微调：概览条文字与竖线留距（包内文字压线，
+      strong 159-161px > 内容区 153px）、按钮与说明间距加大
    ========================================================== */
+.stats>div{padding:0 14px}
+.stats strong{font-size:21px}
+.button-note{margin:22px 0 0;font-size:14px;line-height:1.7;color:#52616b}
 .eyebrow{margin-bottom:0;letter-spacing:0}
 .intro .eyebrow{font-weight:600}
 .intro>section>p{font-size:17px;line-height:1.7;max-width:560px;margin:0}
