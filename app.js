@@ -134,7 +134,7 @@ function intro() {
       </ol>
     </section>
 
-    <section class="card">
+    <section class="card consent-card">
       ${resumeBar}
       <h2>研究说明与参与确认</h2>
       <p>本研究比较不同方法生成的语音驱动全身动作。你将观看匿名视频对，并分别评价路径遵循、动作自然性与足部稳定性、语音—手势匹配和整体表现。</p>
@@ -160,7 +160,7 @@ function intro() {
         </label>
 
         <button class="primary" id="begin" disabled>同意并开始设备检查</button>
-        <p class="muted">下一步将测试视频与声音播放，不计入正式结果；进度以匿名编号保存。</p>
+        <p class="muted button-note">下一步将测试视频与声音播放，不计入正式结果；进度以匿名编号保存。</p>
       </form>
     </section>
   </div>`;

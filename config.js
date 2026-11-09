@@ -10,7 +10,7 @@ window.TRAJPG_CONFIG = {
   mode: "production",
   backend: "supabase",
   studyId: "trajpg-subjective-v1.0-draft",
-  webVersion: "pilot-1.1.2",
+  webVersion: "pilot-1.1.3",
 
   supabase: {
     url: "https://fbvtbbptvcynvesnoqxm.supabase.co",   // 项目地址（不要带 /rest/v1/）
