@@ -1,12 +1,28 @@
 /* ===========================================================
-   app.js —— 按《§21 首页与视觉语言规范》《§22 试次页规范》重写
+   app.js —— pilot-1.1.2
+   -----------------------------------------------------------
+   pilot-1.1.2 增量（对齐研究方《GitHub 前端接入包 (2)》的视觉）：
+     1. 入口页隐藏页眉（body:has(.intro)，独立排版）
+     2. 步骤标识统一为"第 1 / 2 / 3 步"措辞；试次页标题
+        "正式试次 x / 14"与进度条仍保持同步（不采纳接入包
+        的 /15 分母，避免两数不一致）
+     3. 四项评价改为行式布局：白色容器 + 每行 40/60、
+        格内文字 + 原生单选；两段视频未看完前量表整体禁用
+     4. 保留我们的门禁（"已完整观看"）、§22.11 字段、
+        设备检查通过后才创建会话、无任何开发入口
+   -----------------------------------------------------------
+   pilot-1.1.1 增量（按《TrajPG主观实验网站首页修改需求》）：
+     1. 相关经验改为选填：默认"请选择（可选）"，未选择时保存 null（§7.5）
+     2. "匿名评分"统一改为"匿名评价"；按钮下方说明换为文档原文（§7.2/§7.6）
+     3. 创建会话失败改为页内红字提示，不再用 alert；新增"返回上一步"
+        且勾选状态不丢失（§10）
    -----------------------------------------------------------
    保留已经验证过的后端契约，不改变数据链路：
      API.start()      → rpc start_session
      API.getSession() → rpc get_session
      API.submit()     → rpc submit_scores
    -----------------------------------------------------------
-   本版相对上一版的实质变化：
+   本版相对 §21/§22 重写版的实质变化：
      1. 知情同意按 §21.7 改为 2 项必选 + 经验 5 档（选填）
      2. 新增设备检查页（§21.7 / §21.8）：实测视频与声音后才创建会话
      3. 视频状态改为三态（§22.2），门禁以"已完整观看"为准
@@ -40,6 +56,8 @@ let session = null;
 let videos = [newVideoState(), newVideoState()];
 let enteredAt = 0;
 let answerEnabledAt = null;
+/* 首页勾选状态暂存：创建会话失败返回首页时不丢失（首页修改需求 §10） */
+let consentState = { age: false, join: false, exp: '' };
 
 function newVideoState() {
   return { state: 'idle', plays: 0, startedAt: null, watchMs: 0, playFrom: 0, completed: false, error: null };
@@ -124,33 +142,38 @@ function intro() {
         <li>预计用时约 15–22 分钟。</li>
         <li>参与完全自愿，在最终提交前可随时退出。</li>
         <li>系统不收集姓名、手机号、邮箱或身份证等身份信息。</li>
-        <li>匿名评分仅用于学术研究、汇总分析和论文报告。</li>
+        <li>匿名评价仅用于学术研究、汇总分析和论文报告。</li>
       </ul>
       <form id="consent">
-        <label class="check"><input type="checkbox" name="age"><span>我已年满 18 周岁，并已阅读上述研究说明。</span></label>
-        <label class="check"><input type="checkbox" name="join"><span>我自愿参加本研究，并同意匿名评分用于学术研究与汇总分析。</span></label>
+        <label class="check"><input type="checkbox" name="age"${consentState.age ? ' checked' : ''}><span>我已年满 18 周岁，并已阅读上述研究说明。</span></label>
+        <label class="check"><input type="checkbox" name="join"${consentState.join ? ' checked' : ''}><span>我自愿参加本研究，并同意匿名评价用于学术研究与汇总分析。</span></label>
 
         <label class="field"><span>你的相关经验</span>
           <select id="experience">
-            <option value="unspecified">不确定 / 不愿回答</option>
-            <option value="none">没有相关经验</option>
-            <option value="concepts">了解少量相关概念</option>
-            <option value="projects">有学习或项目经验</option>
-            <option value="professional">从事相关研究或专业工作</option>
+            <option value=""${consentState.exp ? '' : ' selected'} disabled>请选择（可选）</option>
+            <option value="none"${consentState.exp === 'none' ? ' selected' : ''}>没有相关经验</option>
+            <option value="concepts"${consentState.exp === 'concepts' ? ' selected' : ''}>了解少量相关概念</option>
+            <option value="projects"${consentState.exp === 'projects' ? ' selected' : ''}>有学习或项目经验</option>
+            <option value="professional"${consentState.exp === 'professional' ? ' selected' : ''}>从事相关研究或专业工作</option>
+            <option value="unspecified"${consentState.exp === 'unspecified' ? ' selected' : ''}>不确定 / 不愿回答</option>
           </select>
         </label>
 
         <button class="primary" id="begin" disabled>同意并开始设备检查</button>
-        <p class="muted">下一步将测试视频与声音播放，不计入正式结果。作答进度将以匿名编号保存，刷新页面后可继续。</p>
+        <p class="muted">下一步将测试视频与声音播放，不计入正式结果；进度以匿名编号保存。</p>
       </form>
     </section>
   </div>`;
 
   const form = $('#consent');
   const begin = $('#begin');
-  const sync = () => { begin.disabled = !(form.age.checked && form.join.checked); };
+  const sync = () => {
+    consentState = { age: form.age.checked, join: form.join.checked, exp: $('#experience').value || '' };
+    begin.disabled = !(form.age.checked && form.join.checked);
+  };
   form.onchange = sync;
-  form.onsubmit = (e) => { e.preventDefault(); deviceCheck(); };
+  form.onsubmit = (e) => { e.preventDefault(); sync(); deviceCheck(); };
+  sync();
 
   if (canResume) {
     $('#resume').onclick = async () => {
@@ -170,9 +193,9 @@ function deviceCheck() {
   const experience = $('#experience').value;
 
   $('#app').innerHTML = `
-  <section class="card" style="max-width:760px;margin:0 auto">
-    <div class="eyebrow">研究说明 · 第 2 步（共 3 步）</div>
-    <h2>设备检查</h2>
+  <section class="card device-card">
+    <div class="eyebrow">设备检查 · 第 2 步（共 3 步）</div>
+    <h2>测试视频与声音播放</h2>
     <p>请点击播放下面这段测试视频，确认你能清楚看到画面，并且能听到声音。本步骤不计入正式结果。</p>
     <div class="video-card" style="margin:18px 0">
       <div class="video-title"><b>测试视频</b><small class="state" id="dstate">尚未播放</small></div>
@@ -181,7 +204,9 @@ function deviceCheck() {
     </div>
     <label class="check"><input type="checkbox" id="dok" disabled><span>我可以看到画面，并能听到声音。</span></label>
     <button class="primary" id="dnext" disabled>进入练习</button>
+    <button class="secondary" id="dback" style="width:100%;margin-top:10px">返回上一步</button>
     <p class="muted">如无法播放或听不到声音，请更换浏览器（建议 Chrome 或 Edge）、检查音量后重试。</p>
+    <p class="error" id="dstart-err" style="margin-top:12px"></p>
   </section>`;
 
   const v = $('#dvideo');
@@ -204,6 +229,7 @@ function deviceCheck() {
   };
   okBox.onchange = () => { next.disabled = !(okBox.checked && seen); };
 
+  $('#dback').onclick = () => intro();
   next.onclick = () => startSession(experience);
 }
 
@@ -215,8 +241,11 @@ async function startSession(experience) {
   btn.disabled = true;
   btn.textContent = '正在创建会话…';
 
+  /* 《首页修改需求》§7.5：未选择经验时保存 null，不保存任何默认类别 */
+  const exp = experience || null;
+
   try {
-    const r = await API.start({ expertise: experience, age: true, consent: true, audio: true });
+    const r = await API.start({ expertise: exp, age: true, consent: true, audio: true });
     if (!r || !Array.isArray(r.trials) || r.trials.length !== 15) {
       throw new Error('服务器返回的试次结构不完整');
     }
@@ -224,7 +253,7 @@ async function startSession(experience) {
       participant_id: r.participant_id,
       participant_serial: r.participant_serial,
       study_id: API.config.studyId,
-      experience_level: experience,
+      experience_level: exp,
       trials: r.trials,
       index: 0,
       answers: [],
@@ -235,9 +264,11 @@ async function startSession(experience) {
     save();
     render();
   } catch (e) {
+    /* §10：失败停在当前页、给出具体原因、不丢勾选状态（可返回上一步重试） */
     btn.disabled = false;
     btn.textContent = old;
-    alert('无法连接研究服务器：' + (e.message || e) + '\n\n请检查网络后重试；若持续失败，请联系研究者。');
+    const err = $('#dstart-err');
+    if (err) err.textContent = '无法连接研究服务器：' + (e.message || e) + '。请检查网络后重试；若持续失败，请联系研究者。';
   }
 }
 
@@ -262,14 +293,14 @@ function render() {
   /* §22.3 进度：数字与进度条同步，且不暴露注意力检查的位置 */
   const doneCount = isPractice ? 0 : session.index;
   const pct = Math.round(doneCount / 14 * 100);
-  const eyebrow = isPractice ? '练习 · 视频比较' : `正式评价 · ${doneCount} / 14`;
-  const title = isPractice ? '练习试次（不计入正式统计）' : '';
+  const eyebrow = '评价 · 第 3 步（共 3 步）';
+  const title = isPractice ? '练习试次（不计入正式统计）' : `正式试次 ${doneCount} / 14`;
 
   $('#app').innerHTML = `
   <div class="trial-top">
     <div>
       <div class="eyebrow">${eyebrow}</div>
-      ${title ? `<h2>${title}</h2>` : ''}
+      <h2>${title}</h2>
     </div>
     <button class="secondary" id="exit">保存并稍后继续</button>
   </div>
@@ -295,20 +326,18 @@ function render() {
       </section>`).join('')}
   </div>
 
-  <div class="matrix">
-    <div class="matrix-head" aria-hidden="true">
-      <span></span>${LABELS.map(l => `<span>${l}</span>`).join('')}
-    </div>
+  <div class="questions">
     ${QUESTIONS.map((q, qi) => `
-      <div class="matrix-row" role="radiogroup" aria-labelledby="q${qi}">
+      <section class="question" role="radiogroup" aria-labelledby="q${qi}">
         <h3 id="q${qi}">${q}</h3>
-        ${LABELS.map((l, oi) => `
-          <label class="opt">
-            <input type="radio" name="q${qi}" value="${oi + 1}" aria-label="${l}"${session.draft[qi] === oi + 1 ? ' checked' : ''}>
-            <span class="dot" aria-hidden="true"></span>
-            <span class="lab">${l}</span>
-          </label>`).join('')}
-      </div>`).join('')}
+        <div class="scale">
+          ${LABELS.map((l, oi) => `
+            <label>
+              <input type="radio" name="q${qi}" value="${oi + 1}" aria-label="${l}"${session.draft[qi] === oi + 1 ? ' checked' : ''}>
+              <span>${l}</span>
+            </label>`).join('')}
+        </div>
+      </section>`).join('')}
   </div>
 
   <div class="actions">
@@ -413,7 +442,7 @@ function bindVideos(media) {
 }
 
 function bindAnswers() {
-  document.querySelectorAll('.opt input[type=radio]').forEach(r => {
+  document.querySelectorAll('.scale input[type=radio]').forEach(r => {
     r.onchange = () => {
       const qi = Number(r.name.slice(1));
       session.draft[qi] = Number(r.value);
@@ -434,6 +463,9 @@ function update() {
   const hint = $('#hint');
   if (!next) return;
   const ok = ready();
+  /* 两段视频未看完前，量表整体禁用（接入包行为：灰态格子不可点） */
+  const watched = videos.every(v => v.completed && v.state !== 'error');
+  document.querySelectorAll('.scale input[type=radio]').forEach(r => { r.disabled = !watched; });
   if (ok && !answerEnabledAt) answerEnabledAt = new Date().toISOString();
   next.disabled = !ok;
   if (hint) hint.textContent = ok ? '本试次已完成，可以继续' : '请完整播放两个视频并完成四项评价';
