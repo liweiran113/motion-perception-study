@@ -1,0 +1,35 @@
+上线步骤（Track A · 2026-11-10）
+================================
+
+这个文件夹就是要传到 GitHub 仓库 my-page 根目录的全部内容。
+顺序不要乱：先数据库，再上传，再验证。
+
+第一步 · 数据库（Supabase → SQL Editor，整段粘贴 → Run）
+  1. supabase/schema.sql     （新结构 + 四个函数，幂等可重跑）
+  2. supabase/seed.sql       （15 对配对池 + 15 组分配方案 + 2 个质量检查）
+  3. 正式收数前再跑一次 supabase/reset-data.sql
+     ⚠ 这一步会清空旧的 pilot 数据并把序号归零，跑之前先把旧数据导出留档！
+
+第二步 · 上传 GitHub（仓库根目录，不要先删旧文件）
+  - 7 个根目录文件（index.html / style.css / app.js / api.js / config.js / README.md / README-BACKEND.md）直接覆盖
+  - videos/ 整个文件夹拖上去（20 个 mp4，共约 24MB，每个不到 1.5MB，网页上传没问题）
+  - supabase/ 文件夹可传可不传（传上去只是留档，方便以后查）
+  - 等 Actions 绿勾（约 1–2 分钟）
+
+第三步 · 验证
+  1. 打开 https://liweiran113.github.io/my-page/  → Ctrl+F5 强刷
+  2. 用  https://liweiran113.github.io/my-page/?test=1  完整走一轮
+     （带 ?test=1 的记录会在库里标 is_test = true，不算正式数据）
+  3. 核对《最终修改要求》第七节的 5 条：
+     ① 20 个视频都能播到结尾、有声音；
+     ② 每人 8 个正式比较，配对与 A/B 方位正确（库里 trial_assignments 可查）；
+     ③ 完整观看限制、重播、必答、刷新恢复正常；
+     ④ 电脑和手机都能看到完整角色（含腿脚）；
+     ⑤ tools/export.html 导出一份测试答卷核对文件名与四项答案。
+  4. 确认无误后，把不带 ?test=1 的正式链接发出去收数。
+
+注意
+  - 本文件夹和数据库里都没有人名/消融类型的对应表；
+    那份对应表在 _private/研究者私有映射表.md，发给学姐时单独私下发，不要进仓库。
+  - 预计用时文案写的是"约 15 分钟"，正式跑几个真实被试后如果偏差大，
+    改 app.js 里首页的两处文案即可。

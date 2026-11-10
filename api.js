@@ -58,7 +58,7 @@
       return ON;
     },
 
-    /* 创建会话：服务端分配 serial、冻结 15 个试次、完成 A/B 交换 */
+    /* 创建会话：服务端分配 serial、定组、冻结 1 练习 + 8 正式 + 2 检查 */
     start: function (o) {
       return rpc("start_session", {
         p_study_id: C.studyId,
@@ -66,7 +66,8 @@
         p_age_confirmed: !!o.age,
         p_consent_confirmed: !!o.consent,
         p_audio_confirmed: !!o.audio,
-        p_web_version: C.webVersion
+        p_web_version: C.webVersion,
+        p_is_test: !!o.isTest
       });
     },
 

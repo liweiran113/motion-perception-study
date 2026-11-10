@@ -1,5 +1,13 @@
 # 后端接入指南（Supabase）
 
+> **v1.2.0（2026-11-10）· Track A 协议升级**：20 个正式视频、每人 8 对、四道新题
+> （动作自然性 / 足部稳定性 / 语音—手势匹配 / 整体表现）。
+> **已在运行的库必须按顺序重跑**：`supabase/schema.sql` → `supabase/seed.sql`
+> （schema 幂等、含迁移段；seed 会重建配对池与 15 组分配方案，幂等不清数据），
+> 然后正式收数前执行一次 `supabase/reset-data.sql` 清空旧 pilot 数据并把序号归零。
+> 注意 `ratings` 的四列已改名（`path_score → naturalness_score`、`motion_score → foot_score`），
+> 旧 SQL 查询要跟着改。
+
 > **v1.1.1（2026-11-09）更新**：按《首页修改需求》§7.5，相关经验改为选填——
 > 未选择时前端传 `p_expertise = null`，`start_session` 已放开 null 校验（选了仍校验取值）。
 > **已在运行的库必须重跑一次 `supabase/schema.sql`**（函数逻辑变化，签名未变，无需 drop；幂等不清数据）。
@@ -29,7 +37,7 @@
 
 1. 打开本目录 `supabase/schema.sql`，**全文复制**进去 → Run。应显示 Success。
 2. 打开 `supabase/seed.sql`，全文复制 → Run。
-   （这是占位清单：视频都指向 `media/placeholder.mp4`，方法名全是匿名代号）
+   （15 对配对池 + 15 组分配方案 + 2 个质量检查；只有匿名文件名与条件编号，无人名映射）
 3. 设置管理员令牌（换成你自己的长随机串，用于以后导出 CSV）：
 
    ```sql
@@ -57,13 +65,14 @@
 
 ## 四、验收（缺这步等于没接）
 
-打开网站，**完整答完一轮**（勾两项同意 → 通过设备检查 → 选熟悉程度 → 15 个试次）：
+打开网站，**完整答完一轮**（勾两项同意 → 通过设备检查 → 选熟悉程度 → 1 练习 + 8 正式 + 2 质量检查）：
 
-- 每答一题右上角不会报错；最后一题会显示"评分已提交至研究服务器"
+- 每答一题右上角不会报错；最后一题会显示"评价已完成"
 - 回 Supabase → **Table Editor**，检查三张表有数据：
-  `participants`（1 行，`valid_participant` 为 true）、
-  `trial_assignments`（15 行）、`ratings`（15 行）
-- 刷新页面点"继续上次作答"：题目、左右顺序**完全不变**
+  `participants`（1 行，`valid_participant` 为 true，`group_no` 在 0–14）、
+  `trial_assignments`（11 行）、`ratings`（11 行）
+- 刷新页面点"继续上次评价"：题目、顺序、A/B 方位**完全不变**
+- 测试数据请用 `网址?test=1` 进入，库里 `is_test` 会标 true，正式分析时排除
 
 ## 五、查看与导出数据（统计用）
 
@@ -92,17 +101,17 @@ node tools/export_csv.mjs --url https://xxxx.supabase.co --key sb_publishable_xx
 
 | 表 | 内容 |
 |---|---|
-| `participants` | 每人一行：序号、是否定稿、注意力失败数、有效性 |
-| `trial_assignments` | 每人 15 行：题目分配（含左右媒体） |
-| `ratings` | 每次评分：四个分数 + 用时 |
+| `participants` | 每人一行：序号、组号、是否测试、是否定稿、注意力失败数、有效性 |
+| `trial_assignments` | 每人 11 行：练习 + 8 正式 + 2 检查（含 A/B 实际文件名） |
+| `ratings` | 每次评分：四个分数 + 用时 + 播放行为 |
 
 想在 SQL Editor 里直接看"人 × 题"的合并视图：
 
 ```sql
-select p.participant_serial as 序号, p.valid_participant as 有效,
-       t.trial_order as 题序, t.trial_type as 类型, t.comparison_id as 单元,
-       t.method_left as 左方法, t.method_right as 右方法,
-       r.path_score as 路径, r.motion_score as 动作,
+select p.participant_serial as 序号, p.group_no as 组号, p.valid_participant as 有效,
+       t.trial_order as 题序, t.trial_type as 类型,
+       t.pair_code as 配对, t.condition_no as 条件, t.variant as 变体, t.full_side as 完整模型侧,
+       r.naturalness_score as 自然, r.foot_score as 足部,
        r.speech_score as 语音, r.overall_score as 整体,
        r.response_time_ms as 用时ms
 from participants p
@@ -112,19 +121,21 @@ where t.trial_type = 'formal'
 order by p.participant_serial, t.trial_order;
 ```
 
-> **注意**：`admin_export` 返回 `method_left / method_right`（真实方法代码），
-> 导出的 CSV 属于内部数据，不要公开发布。令牌打错只会报错，不会泄露数据。
+> **注意**：`admin_export` 返回每对的 A/B 实际文件名与条件/变体代号，
+> 结合研究者私有的映射表即可还原人名与消融类型；导出的 CSV 属于内部数据，不要公开发布。
 
-## 六、正式数据来了之后
+## 六、正式收数流程（Track A）
 
-研究方提供 `public_trials.json` 后（私有映射、正式视频随后）：
-
-1. `node tools/make_manifest.mjs --from public_trials.json`
-   （工具在 `trajpg-experiment/tools/`，会自动校验公开清单不含真实方法名）
-2. 重新生成的 `seed.sql` **只在 Supabase SQL Editor 里执行，不要提交仓库**
-3. 正式视频放对象存储（COS / R2 / Supabase Storage 都行），URL 写进清单；
-   前端 `config.js` 不用再动
-4. 提升 `study_id` 版本号（schema.sql 里 `study_config` 同步改），再发正式链接
+1. Supabase：重跑 `schema.sql` → `seed.sql`（幂等），确认
+   `study_config` 里有 `trajpg-trackA-v1.0` 且 `active = true`
+2. 正式收数前：跑一次 `reset-data.sql` 清空旧 pilot 数据并把序号归零
+3. 上传前端与 `videos/`（20 个 mp4）到 GitHub 仓库根目录
+4. 用 `?test=1` 完整走一轮，确认四表数据、`is_test` 标记、视频都能播放到结尾且有声音
+5. 正式数据收完后用 `tools/export.html`（本机打开）或 `export_csv.mjs` 导出
+6. 协议修订记录（研究者应留档）：
+   **Track A —— 五条件（Jorge / Scott / Zhang / Reamey / Zhao 的完整模型 vs 三类消融）、
+   每人 8 对、四项评价（动作自然性 / 足部稳定性 / 语音—手势匹配 / 整体表现）、
+   不含 PG 基线、不评价路径遵循。**
 
 ## 常见问题
 

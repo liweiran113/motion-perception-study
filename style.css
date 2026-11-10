@@ -154,9 +154,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 .state{font-size:12.5px;color:#7d897f;white-space:nowrap}
 .state[data-state=playing]{color:var(--accent)}
 .state[data-state=done]{color:#1f6b4a;font-weight:500}
-video{display:block;width:100%;background:#17231d;aspect-ratio:16/10;max-height:38vh;object-fit:contain}
+video{display:block;width:100%;background:#17231d;aspect-ratio:16/9;max-height:38vh;object-fit:contain}
 .error{color:var(--danger);font-size:13px;padding:0 18px;margin:0}
 .error:empty{display:none}
+
+/* 视频加载失败后的重试按钮（不抢主按钮视觉） */
+.retry{
+  display:block;margin:0 18px 14px;padding:8px 14px;
+  background:#ecf1f2;color:#29575b;font-size:13px;border-radius:7px;
+}
+.retry[hidden]{display:none}
+
+/* 测试模式提示（仅 ?test=1 出现） */
+.test-flag{
+  margin:0 0 16px;padding:10px 14px;
+  background:#fdf3e6;border:1px solid #eddcbf;border-radius:8px;
+  font-size:13px;color:#7a5a24;
+}
 
 /* ---------- 四项评价（接入包行式布局：格内文字 + 原生单选） ---------- */
 .questions{margin-top:26px}
