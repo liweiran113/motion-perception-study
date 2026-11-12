@@ -25,12 +25,12 @@
 }
 
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   margin:0;
   background:var(--bg);
   color:var(--ink);
-  font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;
 }
 
 /* ---------- 页眉 / 页脚 ---------- */
@@ -65,10 +65,10 @@ h1{font-size:44px;line-height:1.18;font-weight:700;margin:18px 0 22px;text-wrap:
 h2{font-size:23px;margin:0 0 14px;font-weight:600}
 h3{font-size:16px;margin:0;font-weight:500;line-height:1.6}
 p{margin:0 0 14px;color:var(--ink-2)}
-.eyebrow{font-size:13px;color:#496c70;font-weight:600;margin-bottom:10px}
+.eyebrow{font-size:13px;color:#496c70;font-weight:600;margin-bottom:0;letter-spacing:0}
 .intro .eyebrow{font-size:15px;color:#426669}
-.lead{color:var(--ink-2);font-size:17px;line-height:1.7;max-width:560px;margin:0}
-.muted{font-size:13px;color:var(--muted)}
+.lead,.intro>section>p{color:var(--ink-2);font-size:17px;line-height:1.7;max-width:560px;margin:0}
+.muted{font-size:12px;color:var(--muted)}
 ul{padding-left:20px;margin:0 0 14px;color:var(--ink-2)}
 li{margin:6px 0}
 
@@ -83,20 +83,22 @@ li{margin:6px 0}
   border:1px solid var(--card-line);border-radius:12px;
   background:var(--surface);align-items:center;
 }
-.stats>div{padding:0 12px;text-align:center;min-width:0}
+.stats>div{padding:0 14px;text-align:center;min-width:0}
 .stats>div+div{border-left:1px solid var(--line)}
-.stats strong{font-size:25px;line-height:1.35;font-weight:650;white-space:nowrap}
+.stats strong{font-size:21px;line-height:1.35;font-weight:650;white-space:nowrap}
 .stats small{display:block;font-size:14px;line-height:1.5;margin-top:8px;color:var(--muted)}
 
 /* 三步流程 */
 .steps{list-style:none;padding:0;margin:0}
-.steps li{display:flex;align-items:center;min-height:68px;padding:14px 0;border-top:1px solid var(--line);font-size:17px;line-height:1.6;color:var(--ink-2)}
+.steps li{margin:0;display:flex;align-items:center;min-height:68px;padding:14px 0;border-top:1px solid var(--line);font-size:17px;line-height:1.6;color:var(--ink-2)}
 .steps b{flex:0 0 36px;margin:0;color:#326b70;font-size:16px;font-weight:600}
 
 /* 卡片 */
 .card{background:var(--surface);border:1px solid var(--card-line);border-radius:16px;padding:32px}
 .intro .card h2{font-size:27px;line-height:1.4;margin:0 0 20px;font-weight:700}
 .intro .card form{margin-top:24px}
+.consent-card>p{margin:0}
+.consent-card .primary{min-height:54px;padding:12px 16px;width:100%;font-size:17px}
 .intro .card ul{margin:20px 0 24px}
 .intro .card li+li{margin-top:6px}
 
@@ -113,6 +115,7 @@ li{margin:6px 0}
 /* ---------- 表单 ---------- */
 .check{display:flex;gap:12px;align-items:flex-start;margin:0;cursor:pointer;color:var(--ink-2);line-height:1.65}
 .check+.check{margin-top:16px}
+.check span{min-width:0}
 .check input[type=checkbox]{flex:0 0 18px;width:18px;height:18px;margin:4px 0 0}
 input{accent-color:var(--accent)}
 .field{display:block;margin-top:24px;font-size:15px;color:var(--ink-2)}
@@ -135,7 +138,7 @@ button:disabled{background:var(--disabled-bg);color:var(--disabled-ink);cursor:n
 .primary{width:100%;min-height:54px;margin-top:24px;font-size:17px}
 .secondary{background:#ecf1f2;color:#29575b}
 .secondary:hover:not(:disabled){background:#e2ebec}
-.button-note{margin:16px 0 0;font-size:14px;line-height:1.7;color:var(--muted)}
+.button-note{margin:20px 0 0;font-size:14px;line-height:1.7;color:var(--muted)}
 .form-error{font-size:15px;color:var(--danger);margin:16px 0 0}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #247c85;outline-offset:3px}
 
@@ -194,7 +197,7 @@ video{display:block;width:100%;background:#17231d;aspect-ratio:16/9;max-height:3
 .hint{font-size:14px;color:var(--muted)}
 
 /* ---------- 对话框 ---------- */
-dialog{border:1px solid var(--card-line);border-radius:16px;padding:28px;max-width:500px;color:var(--ink)}
+dialog{width:calc(100% - 40px);max-height:calc(100dvh - 40px);overflow:auto;border:1px solid var(--card-line);border-radius:16px;padding:28px;max-width:500px;color:var(--ink)}
 dialog::backdrop{background:rgba(16,32,32,.45)}
 dialog h2{font-size:19px}
 dialog .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
@@ -218,59 +221,97 @@ dialog .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
   .question .scale label{font-size:12px;padding:9px 3px}
 }
 
-/* ---------- 响应式 ---------- */
-@media(min-width:1100px) and (max-width:1250px){
-  .stats strong{font-size:22px}
-}
-@media(max-width:1099px){
+
+.device-card #dback + .muted{margin:20px 0 0;font-size:14px;line-height:1.7}
+
+/* Responsive rules stay last, so desktop refinements cannot cancel phone spacing. */
+@media (max-width:1099px){
   main:has(.intro){margin-top:48px}
   .intro{grid-template-columns:minmax(0,1fr);gap:32px}
   .intro h1{max-width:700px}
-  .stats strong{font-size:26px}
-}
-@media(max-width:760px){
-  .site-header{padding:0 20px}
-  .site-header .meta{display:none}
-  main{padding:0 20px;margin:32px auto}
-  .videos{grid-template-columns:1fr}
-  video{max-height:none}
-  .trial-top{align-items:flex-start;flex-wrap:wrap}
-  .question{padding:18px}
-  .scale label{font-size:14px}
-}
-@media(max-width:600px){
-  main:has(.intro){padding:0 20px;margin-top:32px}
-  .intro h1{font-size:34px;line-height:1.25}
-  .stats{grid-template-columns:minmax(0,1fr);padding:0;min-height:0}
-  /* 接入包此处为左右并排+nowrap，390px 实测会把页面撑宽；改为上下两行 */
-  .stats>div{padding:16px 20px;text-align:left;display:block}
-  .stats>div+div{border-left:0;border-top:1px solid var(--line)}
-  .stats strong{font-size:25px}
-  .stats small{margin-top:4px}
-  .steps li{font-size:16px}
-  .card{padding:24px 20px}
-  .intro .card h2{font-size:25px}
-  .resume-bar{align-items:flex-start;flex-direction:column}
-  .resume-bar button{padding-left:0}
-  .site-footer{width:calc(100% - 40px);margin:56px auto 24px;font-size:13px}
 }
 
-/* ==========================================================
-   末端对齐层 —— 与研究方《GitHub 前端接入包 (2)》最终渲染一致
-   （只覆盖与包不一致的细节；放最后以获得最高优先级）
-   —— 应用户要求微调：概览条文字与竖线留距（包内文字压线，
-      strong 159-161px > 内容区 153px）、按钮与说明间距加大
-   ========================================================== */
-.stats>div{padding:0 14px}
-.stats strong{font-size:21px}
-.button-note{margin:22px 0 0;font-size:14px;line-height:1.7;color:#52616b}
-.eyebrow{margin-bottom:0;letter-spacing:0}
-.intro .eyebrow{font-weight:600}
-.intro>section>p{font-size:17px;line-height:1.7;max-width:560px;margin:0}
-.intro .steps li{display:flex;align-items:center;min-height:68px;padding:14px 0;border-color:#e1e6e8;font-size:17px;line-height:1.6}
-.intro .stats small{display:block;font-size:14px;line-height:1.5;margin-top:8px;color:#52616b}
-.consent-card>p{margin:0}
-.consent-card .primary{height:54px;margin-top:24px;padding:0 16px;width:100%;font-size:17px}
-.muted{font-size:12px;color:#52616b}
-.steps li{margin:0}
-.button-note{margin:16px 0 0;font-size:14px;line-height:1.7;color:#52616b}
+@media (max-width:760px){
+  body{font-size:16px;line-height:1.65}
+  main{margin:24px auto 0;padding:0 20px}
+  main:has(.intro){margin-top:28px;padding:0 20px}
+  .site-header{height:60px;padding:0 20px}
+  .site-header .meta{display:none}
+  .brand{font-size:17px}
+  h2{font-size:22px;line-height:1.4}
+  .intro{gap:24px}
+  .intro .eyebrow{font-size:13px;line-height:1.6}
+  .intro h1{font-size:30px;line-height:1.3;margin:14px 0 18px;font-weight:700;text-wrap:balance}
+  .lead,.intro>section>p{font-size:16px;line-height:1.75;max-width:none}
+  .intro .card h2{font-size:23px;line-height:1.4;margin-bottom:16px}
+  .intro .card ul{margin:16px 0 20px}
+  .intro .card form{margin-top:20px}
+  .card{padding:24px;border-radius:14px;min-width:0}
+  .field{margin-top:20px}
+  .check{gap:10px;line-height:1.7}
+  .check input[type=checkbox]{width:20px;height:20px;flex-basis:20px;margin-top:3px}
+  .check+.check{margin-top:16px}
+  select{min-width:0;max-width:100%;min-height:52px;font-size:16px}
+  button,.button{min-height:48px;line-height:1.5;padding:12px 16px;white-space:normal;overflow-wrap:anywhere;touch-action:manipulation}
+  .primary,.consent-card .primary{min-height:52px;height:auto;margin-top:20px;font-size:16px}
+  .button-note{margin-top:18px;font-size:13px;line-height:1.7}
+  .muted{font-size:13px;line-height:1.7}
+  .resume-bar{align-items:flex-start;flex-direction:column;gap:6px;margin-bottom:20px}
+  .resume-bar button{padding-left:0}
+  .stats{margin:22px 0 20px;min-height:0}
+  .steps li{font-size:15px;line-height:1.65;min-height:58px;padding:14px 0;align-items:flex-start}
+  .steps b{flex-basis:32px;font-size:15px}
+  .trial-top{align-items:flex-start;flex-wrap:wrap;gap:12px}
+  .trial-top>div{min-width:0;flex:1 1 220px}
+  .trial-top h2{font-size:21px;line-height:1.45}
+  .trial-top #exit{font-size:14px}
+  .progress{margin:18px 0 20px}
+  .notice{font-size:14px;line-height:1.7;padding:14px 16px}
+  .videos{grid-template-columns:minmax(0,1fr);gap:16px;margin-top:18px;position:static}
+  .video-card{min-width:0;border-radius:12px}
+  .video-title{padding:10px 14px}
+  .state{font-size:12px;white-space:normal;text-align:right}
+  video{max-height:none;aspect-ratio:16/9;object-fit:contain}
+  .error{padding:0 14px;overflow-wrap:anywhere}
+  .retry{min-height:44px;margin:8px 14px 14px}
+  .questions{margin-top:22px}
+  .question{padding:18px;margin:16px 0}
+  .question h3{font-size:16px;line-height:1.7;margin-bottom:16px}
+  /* Keep the original A-to-B order, with five full-width, tappable choices. */
+  .scale{grid-template-columns:minmax(0,1fr);gap:8px}
+  .scale label{display:flex;align-items:center;gap:12px;min-height:48px;text-align:left;padding:11px 14px;font-size:15px;line-height:1.5}
+  .scale input{flex:0 0 18px;width:18px;height:18px;margin:0}
+  .scale label span{min-width:0}
+  .actions{align-items:stretch;flex-direction:column;gap:14px;padding:8px 0 0}
+  .actions .hint{font-size:14px;line-height:1.7}
+  .actions button{width:100%;min-height:52px}
+  dialog{padding:22px 20px;border-radius:14px}
+  dialog h2{font-size:21px;line-height:1.4}
+  dialog .row{flex-wrap:wrap;gap:10px}
+  dialog .row button{flex:1 1 120px}
+  .device-card #dback + .muted{margin-top:20px;font-size:13px}
+  .center h1[style]{font-size:28px!important;line-height:1.35;margin:14px 0 18px}
+  .serial{font-size:24px;overflow-wrap:anywhere}
+  .site-footer{width:calc(100% - 40px);margin:40px auto 24px;padding-top:18px;font-size:12px;line-height:1.7}
+}
+
+@media (max-width:600px){
+  main,main:has(.intro){padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right))}
+  .intro h1{font-size:clamp(27px,7.5vw,30px)}
+  .stats{grid-template-columns:minmax(0,1fr);padding:0;align-items:stretch}
+  .stats>div{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;text-align:left;min-width:0}
+  .stats>div+div{border-left:0;border-top:1px solid var(--line)}
+  .stats strong{font-size:20px;line-height:1.4;white-space:nowrap;flex-shrink:0}
+  .stats small{font-size:13px;line-height:1.6;margin:0;text-align:right;max-width:150px}
+  .card{padding:22px 18px}
+  .site-footer{width:calc(100% - 36px);padding-bottom:env(safe-area-inset-bottom)}
+}
+
+@media (max-width:359px){
+  main,main:has(.intro){padding-left:16px;padding-right:16px}
+  .intro .eyebrow{font-size:12px}
+  .stats>div{align-items:flex-start;flex-direction:column;gap:4px;padding:14px 16px}
+  .stats small{text-align:left;max-width:none}
+  .card{padding:20px 16px}
+  .site-footer{width:calc(100% - 32px)}
+}
